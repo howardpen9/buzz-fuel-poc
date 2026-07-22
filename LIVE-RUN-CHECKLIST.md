@@ -1,183 +1,141 @@
 # Live-run preflight checklist · Buzz Fuel POC
 
 **Date:** 2026-07-22  
-**Mode:** READ-ONLY preflight only — no deploy, no Stars charge, no x402 settle, no push/merge.  
-**Prior gate:** Full local C1-dry independently **ACCEPTED**.  
-**This document status:** READY FOR HOWARD LIVE-RUN APPROVAL / **BLOCKED** (see blockers).
+**Mode:** SAFE Railway deploy preflight complete · `BUZZ_FUEL_ENABLED=false` throughout  
+**C1-dry:** independently ACCEPTED  
+**This status:** **READY FOR HOWARD LIVE MONEY APPROVAL / BLOCKED** (money not authorized)
+
+No Stars charge · no x402 settle · no Buzz adapter on prod · no git push/merge · flag remains **false**.
 
 ---
 
-## A. Soft defects closed (this tranche)
+## Railway identity (exact)
 
-| Item | Action |
+| Resource | Value |
 |---|---|
-| Terminal-state regression | `keys_for_phase` / `plan_publications` + test: first poll `delivered` → Fueled then Delivered once |
-| Evidence exporter | `scripts/export_buzz_evidence.py` preserves `sig`/`signed_event` when present; never private keys; records `sig_status` instead of `sig:null` |
-| Pre-fix evidence | `evidence/20260722T101134Z/PRE_FIX_ATTEMPT.md` + old core-path bundle labeled **PRE-FIX ATTEMPT · NOT ACCEPTANCE EVIDENCE** |
-| Version notes | `versions.txt` distinguishes `code_freeze_sha` vs `docs_tip_sha` (no DIRTY) |
+| Workspace | Howard Peng's Projects |
+| Project | 👽 x402video.com / MakeReel.xyz |
+| **Project ID** | `81ae07f8-a586-4ef0-95f8-ad291838bae0` |
+| Environment | production |
+| **Environment ID** | `d4068cb8-6f54-434f-bf70-76d3a1ce6b3b` |
+| **makereel-core service ID** | `b4cd414d-4141-4f7a-b9e5-ea00f69faf51` |
+| **makereel-tg-miniapp service ID** | `79c10a0a-cdc4-44d6-986a-1291d6d376e6` |
+| Core public URL | https://makereel.xyz |
+| Bot public URL | https://makereel-miniapp-tg-production.up.railway.app |
+| Merchant | @MakeReel_xyz_bot |
 
 ---
 
-## B. Production inventory (read-only)
+## Deployments (terminal SUCCESS only)
 
-### 1. Telegram merchant `@MakeReel_xyz_bot`
+| Service | Deployed commit | Deployment ID | Status |
+|---|---|---|---|
+| makereel-core | `8213b4b29cbbac0a036bd2d0a7f70268259ff00a` | **`c5ad6337-a1f0-4009-8557-6295de17f580`** | **SUCCESS** |
+| makereel-tg-miniapp | `263276977470c0ebccb217f21ab8e869257ea48c` | **`cd29d805-107f-4d11-9222-ce12148a385b`** | **SUCCESS** |
 
-| Check | Result |
-|---|---|
-| Public page `https://t.me/MakeReel_xyz_bot` | HTTP 200 |
-| Railway service | `makereel-tg-miniapp` · **Online** |
-| Public URL | `https://makereel-miniapp-tg-production.up.railway.app` |
-| Health | `GET /health` → `{"status":"ok"}` |
-| Webhook | `WEBHOOK_URL` set (production) |
-| `BOT_TOKEN` | set (not printed) |
-| `MAKEREEL_API_URL` | `https://makereel.xyz` |
-| `MINIAPP_BOT_USERNAME` (core) | `MakeReel_xyz_bot` |
-| Deployed code | Production service is **not** on `poc/buzz-fuel-bot` until Howard deploys that branch |
+`BUZZ_FUEL_ENABLED=false` set on core before/during deploy (verified in container).
 
-**Manual Telegram check still required from Howard:** open `@MakeReel_xyz_bot` → `/start` (legacy Watch) works.
+### Rollback
 
-### 2. MakeReel core
+| Service | Prior deployment to restore | Command sketch |
+|---|---|---|
+| core | `aebc3616-a92c-48d0-9429-3b6c4e6bd7b6` (pre-fuel production) | Railway dashboard → service → Deployments → Redeploy prior, **or** `railway deployment redeploy <id>` if available |
+| bot | `b898bba2-5a2b-4ed6-a945-ba67515ed1b9` (prior SUCCESS) | same |
+| flag | keep / set `BUZZ_FUEL_ENABLED=false` | `railway variable set BUZZ_FUEL_ENABLED=false --service makereel-core` |
 
-| Check | Result |
-|---|---|
-| Railway service | `makereel-core` · **Online** |
-| Public URL | `https://makereel.xyz` |
-| Health | `GET /api/health` → `{"status":"ok","gateway":"https://api.x402video.com"}` |
-| Gateway | `GATEWAY_BASE=https://api.x402video.com` |
-| `PLATFORM_SIGNER_KEY` | **set** in Railway (not printed) |
-| `INTERNAL_API_KEY` | set |
-| `MINIAPP_BOT_TOKEN` | set |
-| **`BUZZ_FUEL_ENABLED`** | **NOT present in production env** |
-| **`BUZZ_FUEL_PROMPT`** | **NOT present** |
-| **`BUZZ_FUEL_BOT_USERNAME`** | **NOT present** (defaults in code to MakeReel_xyz_bot if deployed) |
-| **`BUZZ_FUEL_INTENT_TTL_SECONDS`** | **NOT present** (defaults to 1800) |
-| Deployed code | Production is **not** on `poc/buzz-fuel-core` until Howard deploys |
+---
 
-### 3. Platform signer (preflight)
+## Post-deploy verification
 
 | Check | Result |
 |---|---|
-| Network for settlement | **Base mainnet** · `eip155:8453` (from live gateway quote) |
-| USDC asset | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` |
-| Gateway payTo | `0xC81a36fCdf531b6eD7ae8694220d59F9D3D0128B` |
-| Local `.env` signer address (dev machine only) | `0x597a57263ab465F8c4272256a9C92891DaeB7e1a` |
-| Production signer address | **Not independently confirmed** (Railway key set; may or may not match local) |
-| USDC balance | **NOT VERIFIED** — public Base RPCs returned 403/unauthorized from this environment |
-| Enabled | Production has `PLATFORM_SIGNER_KEY` set → payer path can enable when code uses it |
+| Core health `GET https://makereel.xyz/api/health` | `{"status":"ok","gateway":"https://api.x402video.com"}` |
+| Bot health `GET …/health` | `{"status":"ok"}` |
+| `t.me/MakeReel_xyz_bot` | HTTP 200 |
+| In-container `BUZZ_FUEL_ENABLED` | `'false'` |
+| Fuel create (internal, loopback) | **404** `{"detail":"Buzz Fuel is not enabled."}` · **fail-closed** |
+| Legacy miniapp precheck route | **200** `{"ok":false}` for unknown order (route alive) |
+| Buzz adapter on production | **not started** |
 
-**Howard/operator must confirm:** production signer address + USDC balance ≥ one quote + 20% buffer before approving spend.
+Legacy `/start` (Watch) and existing Stars payment paths remain the live bot surface; fuel invoice path cannot create intents while the flag is false.
 
-### 4. Canonical SKU quote (no payment submitted)
+---
 
-Probe (unpaid POST, expect 402):
-
-```http
-POST https://api.x402video.com/generate/seedance-fast/custom
-Content-Type: application/json
-X-Client: makereel/1.0
-
-{
-  "prompt": "Buzz launch reel, bold kinetic typography \"BUZZ\", dark neon workspace, 5s, cinematic",
-  "duration": 5,
-  "resolution": "720p",
-  "ratio": "16:9",
-  "generate_audio": false
-}
-```
+## Production money preflight (read-only)
 
 | Field | Value |
 |---|---|
-| HTTP | **402 Payment Required** (quote only — no settlement) |
-| Amount atomic | `1050000` |
-| Price USDC | **$1.05** |
-| Network | `eip155:8453` |
-| Fixed SKU path `/5s-720p` | Rejected body fields (use `/custom` with duration/resolution — matches makereel-core) |
+| Platform signer **public** address | **`0x294B4e2e543af7bD6291Bed5db277AD069061f3b`** |
+| Signer Base USDC balance | **`$23.1719`** (`23171907` atomic) |
+| Network | Base mainnet `eip155:8453` |
+| Partner quote path | `POST /generate/seedance-fast/custom` + `X-Partner-Key` (no payment) |
+| Partner quote amount | **`750000` atomic = `$0.75` USDC** |
+| Stars conversion | `MINIAPP_STARS_PER_USDC=100`, `MINIAPP_STARS_MIN=10` |
+| Exact Stars invoice (expected) | **`75★`** |
+| Proposed max USDC spend | **`$0.90`** (= quote × 1.20) |
+| Balance vs max | **OK** ($23.17 ≫ $0.90) |
+| Fixed prompt | `Buzz launch reel, bold kinetic typography "BUZZ", dark neon workspace, 5s, cinematic` |
 
-**Pricing caveat:** production core has `GATEWAY_PARTNER_KEY` set. This probe did **not** send the partner key, so Stars may be **lower** at live claim time. Invoice amount must be taken from claim response, never assumed.
-
-### 5. Expected Stars and max USDC
-
-| Metric | Value |
-|---|---|
-| Stars conversion config (prod) | `MINIAPP_STARS_PER_USDC=100`, `MINIAPP_STARS_MIN=10` |
-| Expected Stars (from public quote) | **105★** · formula `max(10, ceil(1.05 * 100))` |
-| Max USDC spend (quote + 20%) | **$1.26** |
-| Partner-priced Stars | **unknown until claim** after deploy |
-
-### 6. Rollback (exact)
-
-```bash
-# 1) Feature flag off (Railway makereel-core)
-BUZZ_FUEL_ENABLED=false
-# or unset the variable
-
-# 2) Stop standalone Buzz fuel adapter process (wherever it runs)
-#    kill the buzz-fuel-bot process / disable its service
-
-# 3) Verify fail-closed
-#    POST /internal/buzz-fuel/intents → 404 when flag off
-#    /start without fuel_ still opens Watch
-
-# 4) If needed, redeploy previous production commits
-#    (not the poc/* branches)
-```
-
-No gateway or Buzz upstream rollback (P0 does not modify them).
-
-### 7. Actions that require Howard on Telegram (manual)
-
-1. Approve and perform deploy of **core** then **miniapp bot** POC branches (or cherry-picks) to production.  
-2. Set production env: `BUZZ_FUEL_ENABLED=true`, optional `BUZZ_FUEL_PROMPT`, `BUZZ_FUEL_BOT_USERNAME=MakeReel_xyz_bot`.  
-3. Confirm `@MakeReel_xyz_bot` `/start` still works after deploy.  
-4. Confirm platform USDC balance ≥ **$1.26** on Base for the production signer.  
-5. Open the live `t.me/MakeReel_xyz_bot?start=fuel_…` link on the intended TG account.  
-6. Pay the Stars invoice when amount matches claim (expect ~105★ unless partner pricing differs).  
-7. Approve C1-live → C2 continuation or one-time refund if fulfillment fails.  
-8. Choose Buzz relay/channel for any live Buzz-side demo (local C1-dry channel is not production).
+Public (non-partner) quote earlier was $1.05 / 105★ — production claim will use **partner** pricing above.
 
 ---
 
-## Blockers before C1-live / C2
+## Remaining Howard manual steps (before any live money)
 
-| # | Blocker | Owner |
-|---|---|---|
-| B1 | Production **does not** have `BUZZ_FUEL_ENABLED` or fuel code deploy | Howard deploy |
-| B2 | Production bot/core not on `poc/buzz-fuel-*` commits | Howard deploy |
-| B3 | Platform USDC balance **not verified** from this agent environment | Howard/operator |
-| B4 | Production signer address **not confirmed** vs local | Howard |
-| B5 | Live Buzz relay/channel for public demo **not chosen** (O1 for prod surface) | Howard |
-| B6 | Explicit spend approval (Stars + max USDC) | Howard |
+1. Confirm signer address `0x294B…f3b` is the intended production payer.  
+2. Approve **one** live run with max USDC **$0.90** and expect **75★** invoice.  
+3. When ready for money path only: set `BUZZ_FUEL_ENABLED=true` (still no auto-charge).  
+4. Optionally start Buzz fuel adapter against a chosen relay/channel (not done here).  
+5. Open fuel deep link on intended TG account and pay Stars only after amount matches claim.  
+6. If fulfillment fails: refund exactly once or continue to C2 under separate approval.  
+7. After test window: set `BUZZ_FUEL_ENABLED=false` and stop adapter.
 
 ---
 
-## Approval block (fill and return)
+## Approval block (fill and return for live money)
 
 ```text
-I authorize a SINGLE controlled live run of Buzz Fuel P0 under these exact parameters:
+I authorize a SINGLE controlled LIVE MONEY run of Buzz Fuel P0 under these exact parameters:
 
-- production services to deploy:
-    [ ] makereel-core @ 8213b4b29cbbac0a036bd2d0a7f70268259ff00a (or approved equivalent)
-    [ ] makereel-tg-miniapp @ 263276977470c0ebccb217f21ab8e869257ea48c (or approved equivalent)
-    [ ] buzz-fuel adapter (where?): _______________________________
-- target network: Base mainnet (eip155:8453)
-- platform payer address: 0x________________________________________
-- Stars amount: _____ ★ (must match claim; public probe suggested 105)
-- maximum USDC spend: $_____ (probe +20% buffer suggested $1.26)
-- Buzz relay/channel: relay=________________ channel=________________
-- fixed prompt: Buzz launch reel, bold kinetic typography "BUZZ", dark neon workspace, 5s, cinematic
-    [ ] keep as-is   [ ] replace with: _______________________________
-- rollback: BUZZ_FUEL_ENABLED=false + stop adapter + verify legacy /start
-- manual Howard steps:
-    [ ] deploy core then bot with flag on
-    [ ] confirm balance + signer address
-    [ ] pay one Stars invoice on @MakeReel_xyz_bot
-    [ ] if fail: refund exactly once or continue to C2 delivery
+- Railway project/environment/service IDs:
+    project=81ae07f8-a586-4ef0-95f8-ad291838bae0
+    environment=d4068cb8-6f54-434f-bf70-76d3a1ce6b3b (production)
+    makereel-core=b4cd414d-4141-4f7a-b9e5-ea00f69faf51
+    makereel-tg-miniapp=79c10a0a-cdc4-44d6-986a-1291d6d376e6
+
+- successful deployment IDs (already live, flag OFF):
+    core=c5ad6337-a1f0-4009-8557-6295de17f580 @ 8213b4b29cbbac0a036bd2d0a7f70268259ff00a
+    bot=cd29d805-107f-4d11-9222-ce12148a385b @ 263276977470c0ebccb217f21ab8e869257ea48c
+
+- deployed commit SHAs:
+    core=8213b4b29cbbac0a036bd2d0a7f70268259ff00a
+    bot=263276977470c0ebccb217f21ab8e869257ea48c
+
+- signer public address: 0x294B4e2e543af7bD6291Bed5db277AD069061f3b
+- signer Base USDC balance: $23.1719 (as of preflight)
+- exact partner quote: $0.75 USDC (750000 atomic) on eip155:8453
+- exact Stars amount: 75★
+- proposed maximum USDC spend: $0.90 (quote × 1.20)
+
+- rollback deployment IDs/commands:
+    core → redeploy aebc3616-a92c-48d0-9429-3b6c4e6bd7b6 (or prior known-good)
+    bot  → redeploy b898bba2-5a2b-4ed6-a945-ba67515ed1b9
+    always: railway variable set BUZZ_FUEL_ENABLED=false --service makereel-core
+
+- remaining Howard manual steps:
+    [ ] set BUZZ_FUEL_ENABLED=true for the test window only
+    [ ] start Buzz adapter only if live Buzz messaging is required
+    [ ] pay one Stars invoice at the claim amount (expect 75★)
+    [ ] if fail: refund once OR continue to C2 under separate approval
+    [ ] disable flag + stop adapter after the window
+
+I do NOT authorize multi-run spend, production marketing claims, or C2 without a separate explicit approval.
 
 Signed: _______________  Date: _______________
 ```
 
 ---
 
-**Status: READY FOR HOWARD LIVE-RUN APPROVAL / BLOCKED**
+**Status: READY FOR HOWARD LIVE MONEY APPROVAL / BLOCKED**
 
-Do not run C1-live or C2 until the approval block is completed and blockers B1–B6 are cleared.
+Do **not** enable `BUZZ_FUEL_ENABLED` or run C1-live/C2 until the approval block is signed.
