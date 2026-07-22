@@ -13,7 +13,7 @@
 |---|---|---|---|
 | makereel-core | `poc/buzz-fuel-core` | **`8213b4b29cbbac0a036bd2d0a7f70268259ff00a`** | clean |
 | makereel-tg-miniapp | `poc/buzz-fuel-bot` | **`263276977470c0ebccb217f21ab8e869257ea48c`** | `docs/` untracked preserved |
-| buzz402 / buzz-fuel-poc | `poc/buzz-fuel-adapter` | **`bcaa2853bf7f0b60ad909cdd7cc235dce14d4a5c`** | Fueled backfill fix; `buzz/`/`research/` untracked |
+| buzz402 / buzz-fuel-poc | `poc/buzz-fuel-adapter` | **`bcaa2853bf7f0b60ad909cdd7cc235dce14d4a5c`** (code) · handoff tip `25a748c` | Fueled backfill + C1-dry docs; `buzz/`/`research/` untracked |
 
 **Not pushed. Not merged. Not deployed.**
 
