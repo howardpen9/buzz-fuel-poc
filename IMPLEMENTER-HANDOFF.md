@@ -2,8 +2,12 @@
 
 **Role:** implementer (not reviewer).
 
-**Status:** `PARTIAL / FULL C1-DRY READY FOR REVIEW`  
-**Not shipped. Not accepted. Not C2.**
+**Status:** `READY FOR HOWARD LIVE-RUN APPROVAL / BLOCKED`  
+**C1-dry:** independently **ACCEPTED**.  
+**Not shipped. Not C1-live/C2. No real Stars/x402 this tranche.**
+
+Soft defects closed: terminal-state regression test, evidence exporter `sig_status`, pre-fix labeling, version SHA roles.  
+Live preflight: see [LIVE-RUN-CHECKLIST.md](./LIVE-RUN-CHECKLIST.md).
 
 ---
 

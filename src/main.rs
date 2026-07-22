@@ -23,7 +23,8 @@ mod model;
 
 use makereel::MakeReelClient;
 use model::{
-    format_payment_link, format_status_message, is_exact_fuel, CreateIntentResponse, IntentPhase,
+    format_payment_link, format_status_message, is_exact_fuel, keys_for_phase, CreateIntentResponse,
+    IntentPhase,
 };
 
 const DEFAULT_RELAY_URL: &str = "ws://localhost:3000";
@@ -398,17 +399,9 @@ async fn poll_and_publish_status(
             }
         };
         let phase = IntentPhase::parse(&status.status);
-        let Some(key) = phase.transition_key() else {
-            continue;
-        };
         // If job races ahead to delivered/failed before we observed paid, still
         // emit Fueled (C1) so payment correlation is visible on the channel.
-        let keys: Vec<&str> = match key {
-            "delivered" => vec!["fueled", "delivered"],
-            "failed" => vec!["fueled", "failed"],
-            "running" if !publish_running => vec![],
-            other => vec![other],
-        };
+        let keys = keys_for_phase(&phase, publish_running);
         if keys.is_empty() {
             continue;
         }

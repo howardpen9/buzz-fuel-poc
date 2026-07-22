@@ -1,5 +1,7 @@
 //! Shared types for MakeReel fuel intent status and Buzz message formatting.
 
+use std::collections::HashSet;
+
 use serde::Deserialize;
 
 /// Core-owned intent status values we understand.
@@ -43,6 +45,60 @@ impl IntentPhase {
             Self::Unknown(_) => None,
         }
     }
+
+    /// True once the intent is terminal for the Buzz status poller.
+    pub fn is_terminal(&self) -> bool {
+        matches!(
+            self,
+            Self::Delivered | Self::Failed | Self::Refunded | Self::Expired
+        )
+    }
+}
+
+/// Ordered transition keys to publish for one observed core status.
+///
+/// When the first poll already returns `delivered`/`failed`, still emit `fueled`
+/// first so C1 payment correlation is visible, then the terminal key.
+pub fn keys_for_phase(phase: &IntentPhase, publish_running: bool) -> Vec<&'static str> {
+    match phase.transition_key() {
+        Some("delivered") => vec!["fueled", "delivered"],
+        Some("failed") => vec!["fueled", "failed"],
+        Some("running") if !publish_running => vec![],
+        Some(other) => vec![other],
+        None => vec![],
+    }
+}
+
+/// Pure poller planner: given successive core status strings, return the
+/// sequence of transition keys that would be published (at most once each).
+///
+/// Stops after the first poll that yields a terminal publication, matching
+/// production poller control flow.
+pub fn plan_publications(poll_statuses: &[&str], publish_running: bool) -> Vec<&'static str> {
+    let mut published: HashSet<&'static str> = HashSet::new();
+    let mut out: Vec<&'static str> = Vec::new();
+
+    for status in poll_statuses {
+        let phase = IntentPhase::parse(status);
+        let keys = keys_for_phase(&phase, publish_running);
+        if keys.is_empty() {
+            continue;
+        }
+
+        let mut reached_terminal = false;
+        for key in keys {
+            if published.insert(key) {
+                out.push(key);
+            }
+            if matches!(key, "delivered" | "failed") || phase.is_terminal() {
+                reached_terminal = true;
+            }
+        }
+        if reached_terminal {
+            break;
+        }
+    }
+    out
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -136,6 +192,29 @@ mod tests {
         assert_eq!(IntentPhase::Failed.transition_key(), Some("failed"));
         assert_eq!(IntentPhase::Refunded.transition_key(), Some("failed"));
         assert_eq!(IntentPhase::AwaitingClaim.transition_key(), None);
+    }
+
+    #[test]
+    fn first_poll_delivered_publishes_fueled_then_delivered_once() {
+        // Regression: direct terminal state must still emit Fueled first.
+        assert_eq!(
+            keys_for_phase(&IntentPhase::Delivered, false),
+            vec!["fueled", "delivered"]
+        );
+        assert_eq!(
+            plan_publications(&["delivered"], false),
+            vec!["fueled", "delivered"]
+        );
+        // Repeated polls of delivered (or any later status) must not re-publish.
+        assert_eq!(
+            plan_publications(&["delivered", "delivered", "delivered"], false),
+            vec!["fueled", "delivered"]
+        );
+        // Paid then delivered still yields each transition once, in order.
+        assert_eq!(
+            plan_publications(&["paid", "running", "delivered"], false),
+            vec!["fueled", "delivered"]
+        );
     }
 
     #[test]
