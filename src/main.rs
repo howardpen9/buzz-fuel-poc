@@ -401,56 +401,60 @@ async fn poll_and_publish_status(
         let Some(key) = phase.transition_key() else {
             continue;
         };
-        if key == "running" && !publish_running {
+        // If job races ahead to delivered/failed before we observed paid, still
+        // emit Fueled (C1) so payment correlation is visible on the channel.
+        let keys: Vec<&str> = match key {
+            "delivered" => vec!["fueled", "delivered"],
+            "failed" => vec!["fueled", "failed"],
+            "running" if !publish_running => vec![],
+            other => vec![other],
+        };
+        if keys.is_empty() {
             continue;
         }
 
-        {
-            let mut st = state.lock().await;
-            let set = st.published.entry(intent_id.clone()).or_default();
-            if !set.insert(key.to_string()) {
-                // C06: already published this transition.
-                if matches!(
-                    phase,
-                    IntentPhase::Delivered
-                        | IntentPhase::Failed
-                        | IntentPhase::Refunded
-                        | IntentPhase::Expired
-                ) {
-                    break;
-                }
-                continue;
-            }
-        }
-
-        let body = format_status_message(
-            key,
-            &buzz_event_id,
-            &intent_id,
-            status.job_id.as_deref(),
-            status.share_url.as_deref(),
-        );
-
-        match publish_channel_message(&mini, &body).await {
-            Ok(id) => eprintln!("published {key} for {intent_id} as {id}"),
-            Err(err) => {
-                // C07: surface relay rejection clearly; do not claim success.
-                eprintln!("ERROR: relay rejected or failed status publish ({key} intent={intent_id}): {err}");
-                // Allow retry of this transition.
+        let mut reached_terminal = false;
+        for key in keys {
+            {
                 let mut st = state.lock().await;
-                if let Some(set) = st.published.get_mut(&intent_id) {
-                    set.remove(key);
+                let set = st.published.entry(intent_id.clone()).or_default();
+                if !set.insert(key.to_string()) {
+                    // C06: already published this transition.
+                    if matches!(key, "delivered" | "failed") {
+                        reached_terminal = true;
+                    }
+                    continue;
                 }
             }
-        }
 
-        if matches!(
-            phase,
-            IntentPhase::Delivered
-                | IntentPhase::Failed
-                | IntentPhase::Refunded
-                | IntentPhase::Expired
-        ) {
+            let body = format_status_message(
+                key,
+                &buzz_event_id,
+                &intent_id,
+                status.job_id.as_deref(),
+                status.share_url.as_deref(),
+            );
+
+            match publish_channel_message(&mini, &body).await {
+                Ok(id) => eprintln!("published {key} for {intent_id} as {id}"),
+                Err(err) => {
+                    // C07: surface relay rejection clearly; do not claim success.
+                    eprintln!(
+                        "ERROR: relay rejected or failed status publish ({key} intent={intent_id}): {err}"
+                    );
+                    // Allow retry of this transition.
+                    let mut st = state.lock().await;
+                    if let Some(set) = st.published.get_mut(&intent_id) {
+                        set.remove(key);
+                    }
+                }
+            }
+
+            if matches!(key, "delivered" | "failed") {
+                reached_terminal = true;
+            }
+        }
+        if reached_terminal {
             break;
         }
     }
