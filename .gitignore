@@ -1,0 +1,8 @@
+/target/
+/evidence/
+.env
+.env.*
+*.pem
+*.key
+*.nsec
+Cargo.lock
