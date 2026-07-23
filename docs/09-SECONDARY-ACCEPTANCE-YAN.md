@@ -52,10 +52,10 @@ Implementer: **do not “fix” these nits unless they block you.** Prefer shipp
 
 ```text
 Read and execute:
-/Users/howard/orca/projects/buzz402/buzz-fuel-poc/docs/05-IMPLEMENTER-PROMPT.md
+./buzz-fuel-poc/docs/05-IMPLEMENTER-PROMPT.md
 
 Authority stamp:
-/Users/howard/orca/projects/buzz402/buzz-fuel-poc/docs/09-SECONDARY-ACCEPTANCE-YAN.md
+./buzz-fuel-poc/docs/09-SECONDARY-ACCEPTANCE-YAN.md
 → PASS for implementation through C1-dry only.
 
 Stop after handoff package. Do not self-approve. Do not spend real Stars/USDC without Howard.

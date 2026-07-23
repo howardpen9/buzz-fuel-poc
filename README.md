@@ -1,9 +1,12 @@
 # Buzz Fuel POC
 
-**Status:** implementation in progress on POC branches; automated + simulated C1-dry ready for independent review. Not accepted / not shipped.  
-**Goal:** ship one auditable reference experiment connecting Buzz, Telegram Stars, and the existing x402 video rail without creating a fourth payment system.
+**Status:** reference experiment / not product-accepted for public self-service.  
+**What this is:** a low-privilege **Buzz channel adapter** plus integration docs for  
+`/fuel` → official `@MakeReel_xyz_bot` Stars → MakeReel core x402 → signed status back to Buzz.  
+**What this is not:** the payment core, Telegram merchant bot, platform signer, or x402 gateway.
 
-**Implementer handoff:** [IMPLEMENTER-HANDOFF.md](./IMPLEMENTER-HANDOFF.md)
+Open-source hygiene audit: [docs/16-OPEN-SOURCE-AND-DISTRIBUTION-AUDIT.md](./docs/16-OPEN-SOURCE-AND-DISTRIBUTION-AUDIT.md)  
+Implementer handoff (redacted): [IMPLEMENTER-HANDOFF.md](./IMPLEMENTER-HANDOFF.md)
 
 ## One-line product contract
 
@@ -15,100 +18,113 @@ Buzz /fuel
 → the same result is delivered to Telegram and Buzz
 ```
 
-The complete demo may say:
+## Build from a clean clone
 
-> Stars in. x402 out. Proof back to the room.
+This crate path-depends on Buzz SDK:
 
-Only when the acceptance evidence proves a real x402 settlement.
+```toml
+buzz-sdk = { path = "../buzz/crates/buzz-sdk" }
+```
+
+Expected layout:
+
+```text
+<parent>/
+  buzz/                 # https://github.com/block/buzz (see scripts/bootstrap-deps.sh)
+  buzz-fuel-poc/        # this package
+```
+
+```bash
+cd buzz-fuel-poc
+bash scripts/bootstrap-deps.sh   # clones sibling buzz/ if missing
+cargo test --locked
+bash scripts/check-public-hygiene.sh
+```
+
+License: [LICENSE](./LICENSE) (Apache-2.0). Attribution for countdown-bot lineage: [NOTICE](./NOTICE).
+
+## Configure (dev only)
+
+```bash
+cp .env.example .env
+# fill BUZZ_* and MakeReel API settings — never commit .env
+```
+
+**Security note:** today’s adapter still uses a shared `INTERNAL_API_KEY` shape suitable for **operator-controlled** demos. Do **not** treat this as safe community self-service credentials. See the audit doc.
 
 ## Read in this order
 
-1. [00-DECISIONS.md](./docs/00-DECISIONS.md) — locked choices, open gates, non-goals.
-2. [01-SOURCE-MAP.md](./docs/01-SOURCE-MAP.md) — exact local code to reuse and what not to copy.
-3. [02-IMPLEMENTATION-PLAN.md](./docs/02-IMPLEMENTATION-PLAN.md) — cross-repo change sets and work order.
-4. [03-TEST-ACCEPTANCE.md](./docs/03-TEST-ACCEPTANCE.md) — test matrix, evidence, independent sign-off.
-5. [04-RELEASE-RUNBOOK.md](./docs/04-RELEASE-RUNBOOK.md) — staged release, rollback, demo recording.
-6. [08-PEER-REVIEW-CONVERGENCE.md](./docs/08-PEER-REVIEW-CONVERGENCE.md) — final disposition of the peer-review challenges.
-7. Choose the role entry: [05-IMPLEMENTER-PROMPT.md](./docs/05-IMPLEMENTER-PROMPT.md) or [06-REVIEWER-PROMPT.md](./docs/06-REVIEWER-PROMPT.md).
+1. [docs/00-DECISIONS.md](./docs/00-DECISIONS.md) — locked choices, open gates, non-goals.
+2. [docs/01-SOURCE-MAP.md](./docs/01-SOURCE-MAP.md) — code to reuse and what not to copy.
+3. [docs/02-IMPLEMENTATION-PLAN.md](./docs/02-IMPLEMENTATION-PLAN.md) — cross-repo change sets.
+4. [docs/03-TEST-ACCEPTANCE.md](./docs/03-TEST-ACCEPTANCE.md) — test matrix and evidence.
+5. [docs/04-RELEASE-RUNBOOK.md](./docs/04-RELEASE-RUNBOOK.md) — staged release and rollback.
+6. [docs/08-PEER-REVIEW-CONVERGENCE.md](./docs/08-PEER-REVIEW-CONVERGENCE.md) — peer-review disposition.
+7. Role prompts: [docs/05-IMPLEMENTER-PROMPT.md](./docs/05-IMPLEMENTER-PROMPT.md) or [docs/06-REVIEWER-PROMPT.md](./docs/06-REVIEWER-PROMPT.md).
 
-Archived peer input: [07-GROK-ALTERNATE-VIEW.md](./docs/07-GROK-ALTERNATE-VIEW.md). It is not implementation authority.
-
-Folder-level implementation guardrails live in [AGENTS.md](./AGENTS.md).
-
-## Role assignment
-
-| Role | Start here | Authority | Forbidden |
-|---|---|---|---|
-| Implementer | [05-IMPLEMENTER-PROMPT.md](./docs/05-IMPLEMENTER-PROMPT.md) | change approved code surfaces, run non-destructive tests, assemble evidence | self-approve, deploy/spend without approval, widen scope |
-| Independent reviewer | [06-REVIEWER-PROMPT.md](./docs/06-REVIEWER-PROMPT.md) | inspect diffs, rerun safe tests, declare PASS/PARTIAL/FAIL | implement fixes, reinterpret product decisions, authorize spending |
+Folder guardrails: [AGENTS.md](./AGENTS.md).
 
 ## Source-of-truth ownership
 
 | Concern | Authority | P0 treatment |
 |---|---|---|
-| Telegram merchant and payment events | `MakeReel/makereel-tg-miniapp` + `makereel-core` | Extend behind a feature flag |
+| Telegram merchant and payment events | `makereel-tg-miniapp` + `makereel-core` | Extend behind a feature flag |
 | Account, quote, Stars conversion, ledger, refund | `makereel-core` | Reuse; never duplicate here |
-| x402 quote, settlement, job lifecycle | `x402video-gateway` via `makereel-core/api/payer.py` | Call unchanged |
-| Buzz identity, NIP-42, kind 9 messages | `buzz/examples/countdown-bot` | Derive a small standalone adapter here |
+| x402 quote, settlement, job lifecycle | x402 gateway via MakeReel payer | Call unchanged |
+| Buzz identity, NIP-42, kind 9 messages | Buzz `examples/countdown-bot` | Derive a small standalone adapter here |
 | POC coordination and docs | This folder | New |
 
-## Planned checkout topology
-
-Implementation will touch three Git roots:
+## Checkout topology
 
 ```text
-/Users/howard/orca/projects/buzz402
-  └── buzz-fuel-poc/                    # new Buzz adapter + integration docs
+<parent>/
+  buzz/                 # dependency (block/buzz)
+  buzz-fuel-poc/        # this adapter + docs
 
-/Users/howard/Projects/x402/MakeReel/makereel-core
-  └── api/                              # fuel intent/payment orchestration
+<makereel-core-checkout>/
+  api/                  # fuel intent orchestration
 
-/Users/howard/Projects/x402/MakeReel/makereel-tg-miniapp
-  └── bot/                              # /start fuel_*, invoice relay, TG delivery
+<makereel-tg-miniapp-checkout>/
+  bot/                  # fuel_ deep links, Stars invoice, TG delivery
 ```
 
-P0 must not modify:
+P0 must not modify Buzz upstream crates for product behavior, the x402 gateway, or the MakeReel Mini App web UI.
 
-- `/Users/howard/orca/projects/buzz402/buzz`
-- `/Users/howard/Projects/x402/x402Video/x402video-gateway`
-- MakeReel Mini App web UI
+## Local commands (safe / no money)
 
-Those projects are reference/dependency surfaces, not POC worktrees.
+```bash
+# Adapter
+cd buzz-fuel-poc
+bash scripts/bootstrap-deps.sh
+cargo test --locked
+
+# Core (separate checkout)
+cd <makereel-core-checkout>
+uv run pytest tests/test_buzz_fuel.py -v
+
+# Telegram bot (separate checkout)
+cd <makereel-tg-miniapp-checkout>
+uv run pytest tests/ -v
+
+# Simulated C1-dry (no money)
+export MAKEREEL_CORE_PATH=<makereel-core-checkout>
+cd "$MAKEREEL_CORE_PATH"
+uv run python <path-to>/buzz-fuel-poc/scripts/c1_dry_core_path.py
+```
+
+## What must stay out of git
+
+- `.env`, private keys, `*.nsec`, bot tokens
+- `evidence/` (live run packs, screenshots, charge correlation)
+- Production Railway IDs, live share URLs, balances (use private ops notes)
+
+`scripts/check-public-hygiene.sh` bans common foot-guns.
 
 ## Current state
 
-- [x] Planning folder created.
-- [x] Existing payment, payer, gateway, polling, refund, and Buzz bot examples mapped.
-- [x] Acceptance and rollback defined.
-- [x] Change set A — makereel-core fuel contract + 18 tests (`poc/buzz-fuel-core`).
-- [x] Change set B — TG `fuel_` / `bf:` dispatch + 15 tests (`poc/buzz-fuel-bot`).
-- [x] Change set C — standalone Buzz `/fuel` adapter + unit tests (`poc/buzz-fuel-adapter`).
-- [x] Simulated C1-dry core path (labeled NON-C2) — see `scripts/c1_dry_core_path.py`.
-- [ ] Day0 live smokes (O1–O4) — need Howard/operator inputs.
-- [ ] C1-live / C2 real money — blocked on explicit approval.
-- [ ] Independent reviewer sign-off.
-
-## Local commands (safe)
-
-```bash
-# Core
-cd /Users/howard/Projects/x402/MakeReel/makereel-core
-uv run pytest tests/test_buzz_fuel.py -v
-
-# Telegram bot
-cd /Users/howard/Projects/x402/MakeReel/makereel-tg-miniapp
-uv run pytest tests/ -v
-
-# Buzz adapter
-cd /Users/howard/orca/projects/buzz402/buzz-fuel-poc
-cargo test
-
-# Simulated C1-dry (no money)
-cd /Users/howard/Projects/x402/MakeReel/makereel-core
-uv run python /Users/howard/orca/projects/buzz402/buzz-fuel-poc/scripts/c1_dry_core_path.py
-```
-- [x] Grok adversarial review resolved and folded into the authoritative plan.
-- [ ] Day0 environment gates run.
-- [ ] Implementation authorized and assigned.
-- [ ] Code written.
-- [ ] Independent acceptance completed.
+- [x] Adapter + unit tests (`/fuel`, status copy, optional QR/Blossom)
+- [x] Core / TG fuel unit tests (separate repos)
+- [x] Simulated C1-dry path script
+- [x] Open-source hygiene pass (LICENSE, lockfile, path scrub, bootstrap, CI template)
+- [ ] Curated multi-community pilot security (per-install credentials, allowlists) — not this gate
+- [ ] Public self-service distribution — not this gate

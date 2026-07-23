@@ -6,9 +6,10 @@ against makereel-core with gateway/generate mocked. No real Stars, no real x402.
 
 Usage (from makereel-core venv or with PYTHONPATH):
 
-  cd /Users/howard/Projects/x402/MakeReel/makereel-core
+  export MAKEREEL_CORE_PATH=/path/to/makereel-core
+  cd "$MAKEREEL_CORE_PATH"
   BUZZ_FUEL_ENABLED=1 INTERNAL_API_KEY=test-key \\
-    uv run python /Users/howard/orca/projects/buzz402/buzz-fuel-poc/scripts/c1_dry_core_path.py
+    uv run python /path/to/buzz-fuel-poc/scripts/c1_dry_core_path.py
 
 Writes redacted evidence under buzz-fuel-poc/evidence/<timestamp>/ when --write-evidence.
 """
@@ -17,14 +18,27 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import time
 from pathlib import Path
 from unittest.mock import patch
 
-# MakeReel core on path
-CORE = Path("/Users/howard/Projects/x402/MakeReel/makereel-core")
-sys.path.insert(0, str(CORE))
+# MakeReel core on path — no personal absolute paths.
+_core_env = os.environ.get("MAKEREEL_CORE_PATH", "").strip()
+if _core_env:
+    CORE = Path(_core_env).expanduser().resolve()
+    sys.path.insert(0, str(CORE))
+elif (Path.cwd() / "api" / "buzz_fuel.py").is_file():
+    CORE = Path.cwd()
+    sys.path.insert(0, str(CORE))
+else:
+    print(
+        "c1_dry: set MAKEREEL_CORE_PATH to your makereel-core checkout "
+        "or run this script with that repo as the working directory.",
+        file=sys.stderr,
+    )
+    sys.exit(2)
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient

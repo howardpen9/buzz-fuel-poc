@@ -2,7 +2,12 @@
 /evidence/
 .env
 .env.*
+!.env.example
 *.pem
 *.key
 *.nsec
-Cargo.lock
+__pycache__/
+*.pyc
+.DS_Store
+*.swp
+*.swo

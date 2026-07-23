@@ -18,21 +18,24 @@ use tokio::sync::Mutex;
 use tokio_tungstenite::{connect_async, tungstenite::Message};
 use url::Url as WsUrl;
 
+mod blossom;
 mod makereel;
 mod model;
+mod qr;
 
 use makereel::MakeReelClient;
 use model::{
-    format_payment_link, format_status_message, is_exact_fuel, keys_for_phase, CreateIntentResponse,
-    IntentPhase,
+    build_payment_reply, format_status_message, parse_fuel_command, keys_for_phase,
+    CreateIntentResponse,
+    IntentPhase, PaymentImage,
 };
 
 const DEFAULT_RELAY_URL: &str = "ws://localhost:3000";
 const SUBSCRIPTION_ID: &str = "buzz-fuel-bot";
-const BOT_NAME: &str = "makereel-fuel-bot";
+const BOT_NAME: &str = "MakeReel Fuel Bot";
 const BOT_DISPLAY_NAME: &str = "MakeReel Fuel Bot";
 const BOT_ABOUT: &str =
-    "Pays for one fixed Seedance Fast launch reel via Telegram Stars and reports status.";
+    "Demo bot: /fuel → Telegram Stars link → signed Fueled/Delivered updates in this channel.";
 const BOT_ICON_DATA_URL: &str = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'%3E%3Crect width='128' height='128' rx='28' fill='%230a0a12'/%3E%3Ctext x='64' y='78' text-anchor='middle' font-size='48' fill='%23facc15'%3E%E2%9A%A1%3C/text%3E%3C/svg%3E";
 
 const POLL_INTERVAL_SECS: u64 = 5;
@@ -60,7 +63,10 @@ async fn main() -> Result<()> {
     let started_at = nostr::Timestamp::now();
     let state = Arc::new(Mutex::new(BotState::default()));
 
-    eprintln!("listening in channel {} for exact /fuel", config.channel_id);
+    eprintln!(
+        "listening in channel {} for /fuel and /fuel <prompt>",
+        config.channel_id
+    );
 
     loop {
         tokio::select! {
@@ -96,6 +102,8 @@ struct Config {
     channel_id: String,
     bot_keys: Keys,
     owner_auth_tag: Option<Tag>,
+    /// Raw NIP-OA auth tag JSON for HTTP `x-auth-tag` (Blossom membership).
+    owner_auth_tag_json: Option<String>,
     makereel_api_url: String,
     internal_api_key: String,
     poll_interval: Duration,
@@ -113,8 +121,8 @@ impl Config {
 
         let auth_mode =
             std::env::var("BUZZ_BOT_AUTH_MODE").unwrap_or_else(|_| "standalone".to_string());
-        let owner_auth_tag = match auth_mode.as_str() {
-            "standalone" => None,
+        let (owner_auth_tag, owner_auth_tag_json) = match auth_mode.as_str() {
+            "standalone" => (None, None),
             "owner-attested" => {
                 let tag_json = match std::env::var("BUZZ_AUTH_TAG") {
                     Ok(value) if !value.trim().is_empty() => value,
@@ -127,7 +135,8 @@ impl Config {
                 let owner = buzz_sdk::nip_oa::verify_auth_tag(&tag_json, &bot_keys.public_key())
                     .context("BUZZ_AUTH_TAG is not valid for BUZZ_BOT_PRIVATE_KEY")?;
                 eprintln!("owner-attested auth tag verified; owner={}", owner.to_hex());
-                Some(buzz_sdk::nip_oa::parse_auth_tag(&tag_json)?)
+                let tag = buzz_sdk::nip_oa::parse_auth_tag(&tag_json)?;
+                (Some(tag), Some(tag_json))
             }
             other => {
                 bail!("BUZZ_BOT_AUTH_MODE must be 'standalone' or 'owner-attested', got {other:?}")
@@ -155,6 +164,7 @@ impl Config {
             channel_id,
             bot_keys,
             owner_auth_tag,
+            owner_auth_tag_json,
             makereel_api_url: required_env("MAKEREEL_API_URL")?,
             internal_api_key: required_env("INTERNAL_API_KEY")?,
             poll_interval,
@@ -285,9 +295,9 @@ async fn maybe_handle_fuel(
     if event.pubkey == config.bot_keys.public_key() || event.created_at < started_at {
         return Ok(());
     }
-    if !is_exact_fuel(&event.content) {
+    let Some(user_prompt) = parse_fuel_command(&event.content) else {
         return Ok(());
-    }
+    };
 
     let event_id = event.id.to_hex();
     {
@@ -298,24 +308,78 @@ async fn maybe_handle_fuel(
         }
     }
 
-    match makereel.create_intent(&config.channel_id, &event_id).await {
+    let prompt_arg = user_prompt.as_deref();
+    match makereel
+        .create_intent(&config.channel_id, &event_id, prompt_arg)
+        .await
+    {
         Ok(intent) => {
-            let body = format_payment_link(&intent.telegram_url, &intent.intent_id, &event_id);
-            publish_reply(ws, config, event, &body).await?;
-            spawn_status_poller(config, makereel.clone(), state.clone(), intent, event_id);
+            // Prefer core-resolved prompt (includes server default when bare /fuel).
+            let resolved_prompt = intent
+                .prompt
+                .clone()
+                .or_else(|| user_prompt.clone())
+                .filter(|p| !p.trim().is_empty());
+            // Intent already created — QR/upload failure must not create another intent.
+            let image = match try_upload_payment_qr(config, &intent.telegram_url).await {
+                Ok(img) => Some(img),
+                Err(err) => {
+                    eprintln!("QR/Blossom upload failed (text-only fallback): {err}");
+                    None
+                }
+            };
+            let (body, media_tags) = build_payment_reply(
+                &intent.telegram_url,
+                &intent.intent_id,
+                &event_id,
+                resolved_prompt.as_deref(),
+                image.as_ref(),
+            );
+            publish_reply(ws, config, event, &body, &media_tags).await?;
+            spawn_status_poller(
+                config,
+                makereel.clone(),
+                state.clone(),
+                intent,
+                event_id,
+                resolved_prompt,
+            );
         }
         Err(err) => {
             eprintln!("create_intent failed for {event_id}: {err}");
             let body = format!(
-                "Could not open a fuel link right now (maintenance or config). Try again later.\nbuzz: {event_id}"
+                "⚠️ Could not open a fuel link\n\n\
+Fuel is offline or misconfigured (feature flag off, or backend unavailable).\n\
+Try again later, or ask the operator to enable the demo window.\n\n\
+—\nbuzz: {event_id}"
             );
             // Best-effort failure message — still require relay OK.
-            if let Err(e) = publish_reply(ws, config, event, &body).await {
+            if let Err(e) = publish_reply(ws, config, event, &body, &[]).await {
                 eprintln!("failed to publish error reply: {e}");
             }
         }
     }
     Ok(())
+}
+
+/// Encode QR of public `telegram_url` and upload to this relay's Blossom store.
+async fn try_upload_payment_qr(config: &Config, telegram_url: &str) -> Result<PaymentImage> {
+    let payload = qr::qr_payload(telegram_url);
+    let png = qr::encode_qr_png(payload)?;
+    let http_base = blossom::http_base_from_relay(&config.relay_url)?;
+    let dim = format!("{}x{}", png.width, png.height);
+    let uploaded = blossom::upload_png(
+        &http_base,
+        &config.bot_keys,
+        &png.bytes,
+        Some(&dim),
+        config.owner_auth_tag_json.as_deref(),
+    )
+    .await?;
+    Ok(PaymentImage {
+        url: uploaded.url,
+        imeta_tag: uploaded.imeta_tag,
+    })
 }
 
 fn spawn_status_poller(
@@ -324,6 +388,7 @@ fn spawn_status_poller(
     state: Arc<Mutex<BotState>>,
     intent: CreateIntentResponse,
     buzz_event_id: String,
+    fallback_prompt: Option<String>,
 ) {
     // Status publishing from the poller requires its own relay connection so the
     // main read loop is not blocked. Poller publishes via a short-lived session.
@@ -335,6 +400,7 @@ fn spawn_status_poller(
     let poll_timeout = config.poll_timeout;
     let publish_running = config.publish_running;
     let intent_id = intent.intent_id.clone();
+    let create_prompt = intent.prompt.clone().or(fallback_prompt);
 
     tokio::spawn(async move {
         if let Err(err) = poll_and_publish_status(
@@ -349,6 +415,7 @@ fn spawn_status_poller(
             poll_interval,
             poll_timeout,
             publish_running,
+            create_prompt,
         )
         .await
         {
@@ -370,12 +437,14 @@ async fn poll_and_publish_status(
     poll_interval: Duration,
     poll_timeout: Duration,
     publish_running: bool,
+    create_prompt: Option<String>,
 ) -> Result<()> {
     let mini = Config {
         relay_url: relay_url.clone(),
         channel_id: channel_id.clone(),
         bot_keys: bot_keys.clone(),
         owner_auth_tag,
+        owner_auth_tag_json: None,
         makereel_api_url: String::new(),
         internal_api_key: String::new(),
         poll_interval,
@@ -420,12 +489,18 @@ async fn poll_and_publish_status(
                 }
             }
 
+            let prompt = status
+                .prompt
+                .as_deref()
+                .or(create_prompt.as_deref())
+                .filter(|p| !p.trim().is_empty());
             let body = format_status_message(
                 key,
                 &buzz_event_id,
                 &intent_id,
                 status.job_id.as_deref(),
                 status.share_url.as_deref(),
+                prompt,
             );
 
             match publish_channel_message(&mini, &body).await {
@@ -466,14 +541,20 @@ async fn publish_channel_message(config: &Config, body: &str) -> Result<String> 
     Ok(event_id)
 }
 
-async fn publish_reply(ws: &mut Ws, config: &Config, event: &Event, body: &str) -> Result<()> {
+async fn publish_reply(
+    ws: &mut Ws,
+    config: &Config,
+    event: &Event,
+    body: &str,
+    media_tags: &[Vec<String>],
+) -> Result<()> {
     let builder = buzz_sdk::builders::build_message(
         config.channel_id.parse()?,
         body,
         None,
         &[&event.pubkey.to_hex()],
         false,
-        &[],
+        media_tags,
     )?;
     let reply_event = builder.sign_with_keys(&config.bot_keys)?;
     let reply_event_id = reply_event.id.to_hex();

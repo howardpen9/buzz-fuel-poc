@@ -27,17 +27,17 @@ The implementer owns code and evidence production. The implementer does **not** 
 
 ## Required reading order
 
-1. `/Users/howard/orca/projects/buzz402/buzz-fuel-poc/AGENTS.md`
-2. `/Users/howard/orca/projects/buzz402/buzz-fuel-poc/docs/00-DECISIONS.md`
-3. `/Users/howard/orca/projects/buzz402/buzz-fuel-poc/docs/01-SOURCE-MAP.md`
-4. `/Users/howard/orca/projects/buzz402/buzz-fuel-poc/docs/02-IMPLEMENTATION-PLAN.md`
-5. `/Users/howard/orca/projects/buzz402/buzz-fuel-poc/docs/03-TEST-ACCEPTANCE.md`
-6. `/Users/howard/orca/projects/buzz402/buzz-fuel-poc/docs/04-RELEASE-RUNBOOK.md`
-7. `/Users/howard/orca/projects/buzz402/buzz-fuel-poc/docs/08-PEER-REVIEW-CONVERGENCE.md`
-8. `/Users/howard/orca/projects/buzz402/buzz/AGENTS.md`
-9. `/Users/howard/Projects/x402/MakeReel/makereel-core/CLAUDE.md`
+1. `./buzz-fuel-poc/AGENTS.md`
+2. `./buzz-fuel-poc/docs/00-DECISIONS.md`
+3. `./buzz-fuel-poc/docs/01-SOURCE-MAP.md`
+4. `./buzz-fuel-poc/docs/02-IMPLEMENTATION-PLAN.md`
+5. `./buzz-fuel-poc/docs/03-TEST-ACCEPTANCE.md`
+6. `./buzz-fuel-poc/docs/04-RELEASE-RUNBOOK.md`
+7. `./buzz-fuel-poc/docs/08-PEER-REVIEW-CONVERGENCE.md`
+8. `../buzz/AGENTS.md`
+9. `<makereel-core-checkout>/CLAUDE.md`
 10. Applicable files in `makereel-tg-miniapp`; preserve its pre-existing untracked `docs/` directory.
-11. `/Users/howard/Projects/x402/x402Video/x402video-gateway/CLAUDE.md` for gateway constraints only; gateway stays read-only.
+11. `<x402video-gateway-checkout>/CLAUDE.md` for gateway constraints only; gateway stays read-only.
 
 ## Paste-ready prompt
 
@@ -54,13 +54,13 @@ Authority:
 - You may not deploy, spend real Stars/USDC, change credentials, or publish externally without Howard's explicit approval for that exact action.
 
 Read completely before editing, in this order:
-1. /Users/howard/orca/projects/buzz402/buzz-fuel-poc/AGENTS.md
-2. /Users/howard/orca/projects/buzz402/buzz-fuel-poc/docs/00-DECISIONS.md
-3. /Users/howard/orca/projects/buzz402/buzz-fuel-poc/docs/01-SOURCE-MAP.md
-4. /Users/howard/orca/projects/buzz402/buzz-fuel-poc/docs/02-IMPLEMENTATION-PLAN.md
-5. /Users/howard/orca/projects/buzz402/buzz-fuel-poc/docs/03-TEST-ACCEPTANCE.md
-6. /Users/howard/orca/projects/buzz402/buzz-fuel-poc/docs/04-RELEASE-RUNBOOK.md
-7. /Users/howard/orca/projects/buzz402/buzz-fuel-poc/docs/08-PEER-REVIEW-CONVERGENCE.md
+1. ./buzz-fuel-poc/AGENTS.md
+2. ./buzz-fuel-poc/docs/00-DECISIONS.md
+3. ./buzz-fuel-poc/docs/01-SOURCE-MAP.md
+4. ./buzz-fuel-poc/docs/02-IMPLEMENTATION-PLAN.md
+5. ./buzz-fuel-poc/docs/03-TEST-ACCEPTANCE.md
+6. ./buzz-fuel-poc/docs/04-RELEASE-RUNBOOK.md
+7. ./buzz-fuel-poc/docs/08-PEER-REVIEW-CONVERGENCE.md
 8. Each source repo's applicable AGENTS.md/CLAUDE.md before touching that repo.
 
 Before edits:

@@ -7,7 +7,7 @@ This document maps semantics, not just filenames. Copy the behavior indicated; d
 Source root:
 
 ```text
-/Users/howard/orca/projects/buzz402/buzz
+../buzz
 ```
 
 | Source | Reuse | Planned target |
@@ -35,7 +35,7 @@ License note: Buzz is Apache-2.0. Preserve attribution/license notices when deri
 Source root:
 
 ```text
-/Users/howard/Projects/x402/MakeReel/makereel-tg-miniapp
+<makereel-tg-miniapp-checkout>
 ```
 
 | Source | Reuse | Planned change |
@@ -49,8 +49,8 @@ Source root:
 Additional owned source to port selectively:
 
 ```text
-/Users/howard/Projects/x402/MakeReel/makereel-tg-chat/bot/generation.py
-/Users/howard/Projects/x402/MakeReel/makereel-tg-chat/bot/api_client.py
+<makereel-tg-chat-checkout>/bot/generation.py
+<makereel-tg-chat-checkout>/bot/api_client.py
 ```
 
 Reuse only:
@@ -68,7 +68,7 @@ Do not import prompt unlock, referrals, balance hints, keyboards, or remix UI.
 Source root:
 
 ```text
-/Users/howard/Projects/x402/MakeReel/makereel-core
+<makereel-core-checkout>
 ```
 
 | Source | Reuse | Planned change |
@@ -102,7 +102,7 @@ The quote decides the Stars amount. The POC must not supply its own price table.
 Source root:
 
 ```text
-/Users/howard/Projects/x402/x402Video/x402video-gateway
+<x402video-gateway-checkout>
 ```
 
 | Source | Use | Modification |

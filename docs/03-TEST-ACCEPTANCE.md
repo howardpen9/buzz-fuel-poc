@@ -97,12 +97,12 @@ cargo clippy --manifest-path buzz-fuel-poc/Cargo.toml -- -D warnings
 cargo test --manifest-path buzz-fuel-poc/Cargo.toml
 
 # MakeReel core
-cd /Users/howard/Projects/x402/MakeReel/makereel-core
+cd <makereel-core-checkout>
 uv run pytest tests/test_buzz_fuel.py
 uv run pytest
 
 # Telegram Mini App bot
-cd /Users/howard/Projects/x402/MakeReel/makereel-tg-miniapp
+cd <makereel-tg-miniapp-checkout>
 uv run pytest
 ```
 

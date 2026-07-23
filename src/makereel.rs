@@ -25,16 +25,21 @@ impl MakeReelClient {
         &self,
         buzz_channel_id: &str,
         buzz_request_event_id: &str,
+        prompt: Option<&str>,
     ) -> Result<CreateIntentResponse> {
         let url = format!("{}/internal/buzz-fuel/intents", self.base_url);
+        let mut payload = serde_json::json!({
+            "buzz_channel_id": buzz_channel_id,
+            "buzz_request_event_id": buzz_request_event_id,
+        });
+        if let Some(p) = prompt.map(str::trim).filter(|s| !s.is_empty()) {
+            payload["prompt"] = serde_json::Value::String(p.to_string());
+        }
         let res = self
             .http
             .post(&url)
             .header("Authorization", format!("Bearer {}", self.api_key))
-            .json(&serde_json::json!({
-                "buzz_channel_id": buzz_channel_id,
-                "buzz_request_event_id": buzz_request_event_id,
-            }))
+            .json(&payload)
             .send()
             .await
             .context("create_intent request failed")?;

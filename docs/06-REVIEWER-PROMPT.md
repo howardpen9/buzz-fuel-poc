@@ -27,14 +27,14 @@ If review finds a defect, return it to the implementer. After fixes, start a fre
 
 ## Required reading order
 
-1. `/Users/howard/orca/projects/buzz402/buzz-fuel-poc/AGENTS.md`
-2. `/Users/howard/orca/projects/buzz402/buzz-fuel-poc/docs/00-DECISIONS.md`
-3. `/Users/howard/orca/projects/buzz402/buzz-fuel-poc/docs/03-TEST-ACCEPTANCE.md`
-4. `/Users/howard/orca/projects/buzz402/buzz-fuel-poc/docs/04-RELEASE-RUNBOOK.md`
-5. `/Users/howard/orca/projects/buzz402/buzz-fuel-poc/docs/08-PEER-REVIEW-CONVERGENCE.md`
+1. `./buzz-fuel-poc/AGENTS.md`
+2. `./buzz-fuel-poc/docs/00-DECISIONS.md`
+3. `./buzz-fuel-poc/docs/03-TEST-ACCEPTANCE.md`
+4. `./buzz-fuel-poc/docs/04-RELEASE-RUNBOOK.md`
+5. `./buzz-fuel-poc/docs/08-PEER-REVIEW-CONVERGENCE.md`
 6. The implementer handoff and evidence bundle.
-7. `/Users/howard/orca/projects/buzz402/buzz-fuel-poc/docs/01-SOURCE-MAP.md`
-8. `/Users/howard/orca/projects/buzz402/buzz-fuel-poc/docs/02-IMPLEMENTATION-PLAN.md`
+7. `./buzz-fuel-poc/docs/01-SOURCE-MAP.md`
+8. `./buzz-fuel-poc/docs/02-IMPLEMENTATION-PLAN.md`
 9. Applicable source repo AGENTS.md/CLAUDE.md before inspecting each diff.
 
 ## Paste-ready prompt
@@ -52,11 +52,11 @@ You are not the implementer:
 - A defect returns to the implementer with a bounded reproduction. Review again only after a new handoff.
 
 Read completely before verification, in this order:
-1. /Users/howard/orca/projects/buzz402/buzz-fuel-poc/AGENTS.md
-2. /Users/howard/orca/projects/buzz402/buzz-fuel-poc/docs/00-DECISIONS.md
-3. /Users/howard/orca/projects/buzz402/buzz-fuel-poc/docs/03-TEST-ACCEPTANCE.md
-4. /Users/howard/orca/projects/buzz402/buzz-fuel-poc/docs/04-RELEASE-RUNBOOK.md
-5. /Users/howard/orca/projects/buzz402/buzz-fuel-poc/docs/08-PEER-REVIEW-CONVERGENCE.md
+1. ./buzz-fuel-poc/AGENTS.md
+2. ./buzz-fuel-poc/docs/00-DECISIONS.md
+3. ./buzz-fuel-poc/docs/03-TEST-ACCEPTANCE.md
+4. ./buzz-fuel-poc/docs/04-RELEASE-RUNBOOK.md
+5. ./buzz-fuel-poc/docs/08-PEER-REVIEW-CONVERGENCE.md
 6. The implementer handoff and evidence bundle.
 7. Source map, implementation plan, and each repo's applicable instructions.
 

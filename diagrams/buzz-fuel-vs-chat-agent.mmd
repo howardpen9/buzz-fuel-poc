@@ -1,0 +1,33 @@
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "fontFamily": "Inter, ui-sans-serif, system-ui",
+    "fontSize": "18px",
+    "primaryColor": "#111827",
+    "primaryTextColor": "#F9FAFB",
+    "primaryBorderColor": "#4B5563",
+    "lineColor": "#94A3B8",
+    "secondaryColor": "#1E293B",
+    "tertiaryColor": "#0F172A",
+    "background": "#0B0F19",
+    "mainBkg": "#111827",
+    "nodeBorder": "#64748B",
+    "clusterBkg": "#0F172A",
+    "clusterBorder": "#334155",
+    "titleColor": "#F8FAFC",
+    "edgeLabelBackground": "#0B0F19"
+  }
+}}%%
+flowchart LR
+  subgraph BAD["❌ Chat agent"]
+    direction LR
+    A1["free text"] --> A2["LLM decides"] --> A3["status = model"]
+  end
+
+  subgraph GOOD["✅ Buzz Fuel"]
+    direction LR
+    B1["/fuel"] --> B2["adapter"] --> B3["core owns status"]
+    B3 --> B4["TG Stars"]
+    B3 --> B5["x402"]
+    B3 --> B2
+  end

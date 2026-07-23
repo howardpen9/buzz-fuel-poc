@@ -152,7 +152,7 @@ Both the Telegram bot and Buzz adapter are observers of this core endpoint. They
 Repository:
 
 ```text
-/Users/howard/Projects/x402/MakeReel/makereel-core
+<makereel-core-checkout>
 ```
 
 Planned files:
@@ -182,7 +182,7 @@ Exit criteria for change set A:
 Repository:
 
 ```text
-/Users/howard/Projects/x402/MakeReel/makereel-tg-miniapp
+<makereel-tg-miniapp-checkout>
 ```
 
 Planned files:
@@ -214,7 +214,7 @@ Exit criteria for change set B:
 Repository/folder:
 
 ```text
-/Users/howard/orca/projects/buzz402/buzz-fuel-poc
+./buzz-fuel-poc
 ```
 
 Suggested files after implementation is authorized:

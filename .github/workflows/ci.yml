@@ -1,0 +1,37 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect package root
+        id: root
+        run: |
+          if [[ -f Cargo.toml && -f src/main.rs ]]; then
+            echo "dir=." >> "$GITHUB_OUTPUT"
+          elif [[ -f buzz-fuel-poc/Cargo.toml ]]; then
+            echo "dir=buzz-fuel-poc" >> "$GITHUB_OUTPUT"
+          else
+            echo "buzz-fuel-poc Cargo.toml not found" >&2
+            exit 1
+          fi
+
+      - name: Bootstrap Buzz path dependency
+        run: bash scripts/bootstrap-deps.sh
+        working-directory: ${{ steps.root.outputs.dir }}
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Public hygiene
+        run: bash scripts/check-public-hygiene.sh
+        working-directory: ${{ steps.root.outputs.dir }}
+
+      - name: cargo test --locked
+        run: cargo test --locked
+        working-directory: ${{ steps.root.outputs.dir }}
