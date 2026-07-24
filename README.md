@@ -101,16 +101,18 @@ This crate path-depends on the [Buzz SDK](https://github.com/block/buzz/tree/mai
 buzz-sdk = { path = "../buzz/crates/buzz-sdk" }
 ```
 
-Expected layout:
+Expected layout (this repo is the package root):
 
 ```text
 <parent>/
-  buzz/                 # git clone https://github.com/block/buzz.git
-  buzz-fuel-poc/        # this package
+  buzz-fuel-poc/   # this clone (https://github.com/howardpen9/buzz-fuel-poc)
+  buzz/            # sibling — git clone https://github.com/block/buzz.git
 ```
 
+`scripts/bootstrap-deps.sh` clones the Buzz sibling next to this repo if missing.
+
 ```bash
-cd buzz-fuel-poc
+# from this repo root
 bash scripts/bootstrap-deps.sh   # clones sibling block/buzz if missing
 cargo test --locked
 bash scripts/check-public-hygiene.sh
@@ -159,8 +161,8 @@ Folder guardrails: [AGENTS.md](./AGENTS.md).
 
 ```text
 <parent>/
+  buzz-fuel-poc/        # this repo (adapter + docs)
   buzz/                 # dependency (block/buzz)
-  buzz-fuel-poc/        # this adapter + docs
 
 <makereel-core-checkout>/
   api/                  # fuel intent orchestration
@@ -175,7 +177,7 @@ P0 must not modify Buzz upstream crates for product behavior, the x402 gateway, 
 
 ```bash
 # Adapter
-cd buzz-fuel-poc
+# from this repo root
 bash scripts/bootstrap-deps.sh
 cargo test --locked
 
