@@ -1,7 +1,10 @@
 Buzz Fuel bot contains code derived from the Buzz countdown-bot example.
 
+  Project: Buzz — https://github.com/block/buzz
   Copyright of original countdown-bot: contributors to the Buzz / Sprout project
   License: Apache License 2.0 (see LICENSE in this directory)
-  Source: https://github.com/block/buzz (examples/countdown-bot)
+  Source: https://github.com/block/buzz/tree/main/examples/countdown-bot
+  SDK path dep: https://github.com/block/buzz/tree/main/crates/buzz-sdk
 
-This package is a standalone adapter sample; it is not part of the Buzz workspace.
+This package is a standalone adapter sample; it is not part of the Buzz workspace
+and is not published by the Buzz / block maintainers.

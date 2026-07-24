@@ -1,0 +1,52 @@
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "fontFamily": "Inter, ui-sans-serif, system-ui",
+    "fontSize": "16px",
+    "primaryColor": "#111827",
+    "primaryTextColor": "#F9FAFB",
+    "primaryBorderColor": "#4B5563",
+    "lineColor": "#94A3B8",
+    "secondaryColor": "#1E293B",
+    "tertiaryColor": "#0F172A",
+    "background": "#0B0F19",
+    "mainBkg": "#111827",
+    "nodeBorder": "#64748B",
+    "clusterBkg": "#0F172A",
+    "clusterBorder": "#334155",
+    "titleColor": "#F8FAFC",
+    "edgeLabelBackground": "#0B0F19",
+    "actorBkg": "#111827",
+    "actorBorder": "#64748B",
+    "actorTextColor": "#F9FAFB",
+    "actorLineColor": "#94A3B8",
+    "signalColor": "#94A3B8",
+    "signalTextColor": "#F9FAFB",
+    "labelBoxBkgColor": "#1E293B",
+    "labelBoxBorderColor": "#334155",
+    "labelTextColor": "#F9FAFC",
+    "loopTextColor": "#F9FAFB",
+    "noteBkgColor": "#1E293B",
+    "noteTextColor": "#F9FAFB",
+    "noteBorderColor": "#475569",
+    "activationBkgColor": "#1E293B",
+    "sequenceNumberColor": "#0B0F19"
+  }
+}}%%
+sequenceDiagram
+  participant M as Member
+  participant A as Adapter
+  participant C as Core
+  participant T as TG bot
+
+  M->>A: /fuel
+  A->>C: create intent
+  C-->>A: telegram_url
+  A->>M: Stars link + QR
+  M->>T: open fuel_token
+  T->>C: claim + invoice
+  M->>T: pay Stars
+  T->>C: fulfill
+  C-->>C: x402 + generate
+  A->>C: poll status
+  A->>M: Fueled → Delivered

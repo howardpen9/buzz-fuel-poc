@@ -1,0 +1,40 @@
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "fontFamily": "Inter, ui-sans-serif, system-ui",
+    "fontSize": "17px",
+    "primaryColor": "#111827",
+    "primaryTextColor": "#F9FAFB",
+    "primaryBorderColor": "#4B5563",
+    "lineColor": "#94A3B8",
+    "secondaryColor": "#1E293B",
+    "tertiaryColor": "#0F172A",
+    "background": "#0B0F19",
+    "mainBkg": "#111827",
+    "nodeBorder": "#64748B",
+    "clusterBkg": "#0F172A",
+    "clusterBorder": "#334155",
+    "titleColor": "#F8FAFC",
+    "edgeLabelBackground": "#0B0F19"
+  }
+}}%%
+flowchart TB
+  subgraph BUZZ["github.com/block/buzz"]
+    direction LR
+    D["Desktop"] --- R["relay"]
+    R --- S["buzz-sdk"]
+    E["countdown-bot example"]
+  end
+
+  subgraph POC["buzz-fuel-poc · this repo"]
+    A["fuel adapter"]
+  end
+
+  subgraph MR["MakeReel"]
+    C["core + TG Stars + x402"]
+  end
+
+  S -.->|"path dep"| A
+  E -.->|"derived from"| A
+  A <-->|"kind 9 /fuel + status"| R
+  A <-->|"intent / status HTTP"| C

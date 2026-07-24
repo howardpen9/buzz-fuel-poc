@@ -1,0 +1,39 @@
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "fontFamily": "Inter, ui-sans-serif, system-ui",
+    "fontSize": "18px",
+    "primaryColor": "#111827",
+    "primaryTextColor": "#F9FAFB",
+    "primaryBorderColor": "#4B5563",
+    "lineColor": "#94A3B8",
+    "secondaryColor": "#1E293B",
+    "tertiaryColor": "#0F172A",
+    "background": "#0B0F19",
+    "mainBkg": "#111827",
+    "nodeBorder": "#64748B",
+    "clusterBkg": "#0F172A",
+    "clusterBorder": "#334155",
+    "titleColor": "#F8FAFC",
+    "edgeLabelBackground": "#0B0F19"
+  }
+}}%%
+flowchart LR
+  subgraph USER["User pays"]
+    U["Telegram Stars ★"]
+  end
+
+  subgraph PLATFORM["Platform pays"]
+    P["USDC via x402"]
+  end
+
+  subgraph OUT["Same result"]
+    V["video + share link"]
+  end
+
+  U -->|"invoice @MakeReel_xyz_bot"| CORE["makereel-core"]
+  CORE -->|"signer settles"| P
+  P --> GATE["x402 gateway"]
+  GATE --> V
+  V --> TG["Telegram delivery"]
+  V --> BZ["Buzz delivery"]
